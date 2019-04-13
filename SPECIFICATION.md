@@ -9,7 +9,7 @@
 6. [Instructions](#instructions)
 6. [Control Flow](#control-flow)
 7. [Functions](#functions)
-8. [Memory](memory)
+8. [Memory](#memory)
 
 ## Interpretation
 The Simple language is an interpreted language, and code is read from input files into the interpreter's memory representation of the language. This representation is not fully specified and depends on the interpreter.
@@ -80,7 +80,7 @@ Variables are generally all stored somewhere in the program's memory in the inte
 Variables should be alphanumeric, with some possible symbols such as `-` and `_`. Other symbols should generally be avoided to prevent use of reserved markers and unknowingly changing a program's behavior.
 
 ### Literals
-There are three general types of literals in Slang: integers, floating-point values, and strings. Integer and float literals are exactly as one might expect. Strings are only delimited by double quotes, and any whitespace within the quotation marks will be preserved. With strings, there are two special characters: newline `\n` and tab `\t`. Both of these special characters will evaluate to newline and tab characters, respectively. Characters can be escaped via `//` to prevent the interpretation of special characters such as `\n`, `\t`, and `"`. INT and FLOAT literals do not actually have a specific location in memory. Instead, they are kept in the program representation in the interpreter. STRING literals, on the other hand, are stored on the [stack](#stack), and the literal simply points to the start of the string in memory.
+There are three general types of literals in Slang: integers, floating-point values, and strings. Integer and float literals are exactly as one might expect. Strings are only delimited by double quotes, and any whitespace within the quotation marks will be preserved. With strings, there are two special characters: newline `\n` and tab `\t`. Both of these special characters will evaluate to newline and tab characters, respectively. Characters can be escaped via `//` to prevent the interpretation of special characters such as `\n`, `\t`, and `"`. INT and FLOAT literals do not actually have a specific location in memory. Instead, they are kept in the program representation in the interpreter. STRING literals, on the other hand, are stored in stack frames, and the literal simply points to the start of the string in memory.
 
 Examples:
 
@@ -239,7 +239,7 @@ fun @foo:
 Again, the whitespace is generally ignored, so indentation is encouraged, especially in function blocks like the one above. Functions can optionally take arguments and return values. This functionality can be replicated without using function arguments or return values, as shown below, but this is generally has not been as useful since arguments and return values have been added.
 
 ```
-; Use run and get arguments for the function (implicitly uses stack)
+; Use run and get arguments for the function (uses stack frames)
 fun @bar-1 a b:
     cpy c a
     cpy d b
