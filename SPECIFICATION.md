@@ -236,7 +236,7 @@ fun @foo:
     ret
 ```
 
-Again, the whitespace is generally ignored, so indentation is encouraged, especially in function blocks like the one above. Functions can optionally take arguments and return values. This functionality can be replicated without using function arguments or return values, as shown below, but this is generally has not been as useful since arguments and return values have been added.
+Again, the whitespace is generally ignored, so indentation is encouraged, especially in function blocks like the one above. Functions can optionally take arguments and return values. This functionality can be replicated without using function arguments or return values, as shown below, but this is generally has not been as useful since arguments and return values have been added. Functions can only have 1 return instruction placed at its end since the return instructions themselves tell the interpreter when to change contexts out from the function.
 
 ```
 ; Use run and get arguments for the function (uses stack frames)

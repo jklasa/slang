@@ -1,0 +1,133 @@
+%YAML 1.2
+---
+# See http://www.sublimetext.com/docs/3/syntax.html
+file_extensions:
+  - sl
+scope: source.sl
+
+variables:
+  keyword: \b(?:nop|cmp|cpy|typ|prv|prt|spr|psh|mod|pop|run|get|all|del|die|err|rea|jmp|jeq|jne|jgt|jge|jlt|jle|jer|jnr|add|sub|mul|div|inc|dec|bor|and|xor|inv|shl|shr|usr)\b
+
+  char_escape: \\x\h{2}|\\u\h{4}|\\U\h{8}|\\[0-7]{3}|\\.
+
+  ident: \b([A-Za-z0-9]|\_|\-)+\b
+
+contexts:
+  main:
+    - include: match-functions
+    - include: match-tokens
+
+  match-tokens:
+    - include: match-comments
+    - include: match-keywords
+    - include: match-identifiers
+    - include: match-operators
+    - include: match-strings
+
+  match-comments:
+    - match: (;)
+      scope: punctuation.definition.comment.sl
+      push:
+        - meta_scope: comment.line.sl
+        - match: $\n?
+          pop: true
+
+  match-keywords:
+    - match: \b{{keyword}}\b
+      scope: keyword.control.flow.sl
+
+  match-functions:
+    - match: \bfun\b
+      scope: storage.type.function.sl
+      push:
+        - match: \bret\b
+          pop: true
+          scope: variable.parameter.sl
+        - match: \@sl-{{ident}}
+          scope: constant.other.sl
+          push:
+            - match: '\:'
+              pop: true
+            - match: \bfun\b
+              scope: invalid.illegal.sl
+        - match: \@{{ident}}
+          scope: support.class.sl
+          push:
+            - match: '\:'
+              pop: true
+        - match: \bfun\b
+          scope: invalid.illegal.sl
+        - include: match-tokens
+    - match: \bret\b
+      scope: invalid.illegal.sl
+    - match: '\:'
+      scope: invalid.illegal.sl
+
+  match-identifiers:
+    - include: match-predeclared-constants
+    - include: match-labels
+    - include: match-literals
+    - include: match-variables
+
+  match-operators:
+    - match: \b\+\b
+      scope: keyword.operator.sl
+    - match: \b\-\b
+      scope: keyword.operator.sl
+
+  match-strings:
+    - match: '"'
+      scope: punctuation.definition.string.begin.go
+      push:
+        - meta_scope: string.quoted.double.go
+        - match: '"'
+          scope: punctuation.definition.string.end.go
+          pop: true
+        - include: match-template-string
+        - match: '{{char_escape}}'
+          scope: constant.character.escape.go
+        - match: (\%s|\%v)
+          scope: constant.character.escape.go
+
+  match-brackets:
+    - include: match-brackets-compound
+    - include: match-brackets-pointer
+    - include: match-brackets-dereference
+
+  match-predeclared-constants:
+    - match: \b(?:true|false|nil)\b
+      scope: constant.language.sl
+
+  match-variables:
+    - include: match-variables-globals
+    - include: match-variables-functions
+    - match: '{{ident}}'
+      scope: variable.other.sl
+
+  match-labels:
+    - match: ^\#{{ident}}[:]?
+      scope: string.regexp.sl
+    - match: \#{{ident}}[:]?$
+      scope: string.regexp.sl
+    - match: \#{{ident}}[:]?
+      scope: invalid.illegal.sl
+    - match: \>{{ident}}
+      scope: string.regexp.sl
+
+  match-literals:
+    - match: '[+-]?\d*(\.)\d+'
+      scope: constant.numeric.float.sl
+      captures:
+        2: punctuation.separator.decimal.sl
+    - match: '[+-]?\d+'
+      scope: constant.numeric.integer.decimal.sl
+
+  match-variables-globals:
+    - match: \${{ident}}
+      scope: constant.other.sl
+
+  match-variables-functions:
+    - match: \@{{ident}}
+      scope: support.function.sl
+    - match: \@sl-{{ident}}
+      scope: constant.other.sl
