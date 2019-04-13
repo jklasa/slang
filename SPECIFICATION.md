@@ -269,6 +269,24 @@ pop c
 pop d
 ```
 
+When calling a function via the `run` instruction, usually you might supply the correct number of arguments, determined by the header of the called function. However, Slang does not care how many arguments are supplied to the function. If there are fewer arguments supplied to the called function, the provided arguments will be sent, and any remaining arguments not specified by the caller will be set to the default value of `0`. This is useful in the cases where you might want to have some default or optional arguments at the end of a function's parameter list. Additionally, more arguments can be supplied to the called function. In this case, the extra arguments will be placed onto the user stack in reverse order. To obtain these arguments, simply make calls to `pop` where the first argument exceeding the list will be popped first. This has use cases similar to variadic arguments in C. e.g. the Slang library function `sl-printf`.
+
+```
+fun @foo a b:
+    prv a
+    prv b
+    ret
+
+run @foo ; uses default value 0 for both a and b
+
+fun @bar a:
+    pop b
+    pop c
+    ret
+
+run @bar a b c
+```
+
 ## Control flow
 
 Execution flow of a Slang program is controlled [functions](#functions) or labels. Labels are a special type of variable, and they are defined using marker `#`. A label variable will store the instruction number at which it is defined. Notice that this is not necessarily the same as the line number if there are functions or empty lines in the program. Label declarations with a semicolon `:` after them (e.g. `#label:`) stores the next available instruction number instead of the current one. Basically, instead of pointing at ourselves here, we are pointing at code below the label. Labels can be declared on most lines with one exception: the lines on which functions are declared.
