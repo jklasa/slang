@@ -21,7 +21,7 @@ This detail is outside of the langauge itself, but the interpreter will use two 
 ## Characters
 Slang is interpreted line by line, and each line is interpreted character by character. Whitespace is generally ignored, except when differentiating keywords and variable names and when reading string literals. So, it is recommended to use indentation of whatever type in function blocks to format code for at least some readability.
 
-Functions, variables, labels, etc. are composed of only alphanumeric [A-Za-z0-9] characters, underscores _ and dashes -. Such named elements of the code must contain at least one alphabetic character. Certain other characters such as `[ ] " ;` are reserved an cannot be used when not indicating variable expressions, string literals, and comments.
+Functions, variables, labels, etc. are composed of only alphanumeric [A-Za-z0-9] characters, underscores _ and dashes -. Such named elements of the code must contain at least one alphabetic character. Certain other characters such as `[ ] " ; : ( )` are reserved an cannot be used when not indicating variable expressions, string literals, and comments.
 
 ## Comments
 Comments are delimited by semicolons anywhere in a line of code. Anything following the semicolon will be ignored by the interpreter.
@@ -151,6 +151,20 @@ jmp >loop
 ### Labels and Functions as Variables
 Like most elements of Slang, [labels](#control-flow) and [functions](#functions) are treated as variables as well. They can be read from as numeric (INT values), or written to as INT values. Attempts to write to these variable types with FLOAT values will sensibly result in error since these variables are as pointers to addresses. For more detail on these variable types (including range of scope), see their respective sections in the Slang spec.
 
+### Variadic variables
+You might see variadic variables used in instructions that take a variable number of arguments or in function headers. They are generally some sequence of variables that are enclosed in parenthesis and are sent to the instruction as a group of variables. For further reading, head on over to [instructions](#instructions).
+
+Examples:
+```
+fun @function (a b c):
+    ret (a b)
+
+cpy idx 0
+cpy str "hello world"
+run @function (idx str)
+get (a b)
+```
+
 ## Instructions
 Slang programs will consist of mostly instructions. Instructions, fitting one per line, are defined by a select set of keywords that are all 3 characters in length for uniformity. Most take a number of arguments that usually follow a general structure.
 
@@ -158,7 +172,16 @@ Traditionally, if there is more than one argument for an instruction, the leftmo
 
 Right values can be any variable type and generally have no restrictions. These values only require that they can be read, which is true for all variables and literals. In the below instruction tables, right values are marked by `rv`.
 
-Some instructions allow for a variable number of arguments (indicated by '...''). These instructions will use the arguments available, provided they are valid in type and quantity. Most others require a specific number of arguments in a specific order.
+Most instructions require a specific number of arguments in a specific order, but some others allow for a variable number of arguments in groups (indicated by `(r/lv ...)`). Options here are to supply no arguments in this position, or supply arguments normally, but contained within single parenthesis. These instructions will use the arguments available, provided they are valid in type and quantity.
+
+The types of variables required within these groups depend on their use. In function headers and `get` instructions, these variables must all be left values. In `run` and `ret` instructions, the variables are all read and must all be right values.
+
+Example:
+```
+run @function
+run @function (arg1)
+run @function (arg1 arg2 arg2)
+```
 
 ### Standard Instructions
 | Instruction | Operand 1 | Operand 2 | Operand 3 | Behavior |
@@ -166,15 +189,15 @@ Some instructions allow for a variable number of arguments (indicated by '...'')
 | `nop`         | --        | --        | --        | Empty instruction, no behavior | 
 | `cmp`         | `rv1`        | `rv2`        | --        | Compare `rv1 ?? rv2` and save the result flag. Used with jump instructions |
 | `cpy`         | `lv`        | `rv`        | --        | Copy the value of `rv` into `lv`: `lv = rv` | 
-| `typ`         | `lv`        | --        | --        | Get type of value at `lv`: `0 -> INT, 1 -> FLOAT` | 
+| `typ`         | `lv`        | `r/lv`        | --        | Write type of value `r/lv` to `lv`: `0 -> INT, 1 -> FLOAT` | 
 | `prv`         | `lv`        | --        | --        | Print the value itself at location `lv` |   
 | `prt`         | `lv`        | --        | --        | Print value at location `lv` by treating it as a character | 
 | `spr`         | `lv`        | `rv`        | --        | Write formatted string of the numeric value of `rv` into location set at `lv` | 
 | `psh`         | `rv`        | --        | --        | Push rv onto the stack | 
 | `pop`         | `lv`        | --        | --        | Pop value from top of stack in to `lv` | 
-| `run`         | `rv`        | `r/lv` ...        | ...        | Run function `rv`. Takes variable number of `r/lv` arguments, all determined by the function being run, that are sent to the function as arguments |
-| `get`         | `lv`        | ...        | ...        | Variable args. Set all left values equal to values popped from the stack, in reverse order. Intended to retrieve values returned from a function |
-| `ret`         | `r/lv` ...        | ...        | ...        | Return from current function. Variable supplied arguments specify values to be returned via the stack in opposite order. | 
+| `run`         | `rv`        | (`r/lv` ...)        | --        | Run function `rv`. Takes variable number of `r/lv` arguments in parentheses, all determined by the function being run, that are sent to the function as arguments |
+| `get`         | `lv`        | (`r/lv` ...)        | --        | Variable args. Set all left values equal to values popped from the stack, in reverse order. Intended to retrieve values returned from a function |
+| `ret`         | (`r/lv` ...)        | --        | --        | Return from current function. Variable supplied arguments specify values to be returned via the stack in opposite order. | 
 | `all`         | `lv`        | `rv`        | --        | Allocate a block of memory of size rv and store pointer to it in lv | 
 | `del`         | `lv`        | --        | --        | Deallocate block of memory at location `lv` | 
 | `die`         | --        | --        | --        | Immediately end the program | 
@@ -184,15 +207,15 @@ Some instructions allow for a variable number of arguments (indicated by '...'')
 ### Jump Instructions
 | Instruction | Operand 1 | Behavior |
 | ----------- | --------- | -------- |
-| `jmp`         | `lv`      | Unconditional jump to `lv` |
-| `jeq`         | `lv`      | Jump to `lv` if `cmp` found `rv1 == rv2` | 
-| `jne`         | `lv`      | Jump to `lv` if `cmp` found `rv1 != rv2` | 
-| `jgt`         | `lv`      | Jump to `lv` if `cmp` found `rv1 > rv2` |   
-| `jge`         | `lv`      | Jump to `lv` if `cmp` found `rv1 >= rv2` | 
-| `jlt`         | `lv`      | Jump to `lv` if `cmp` found `rv1 < rv2` | 
-| `jle`         | `lv`      | Jump to `lv` if `cmp` found `rv1 <= rv2` | 
-| `jer`         | `lv`      | Jump to `lv` if error flag is set | 
-| `jnr`         | `lv`      | Jump to `lv` if error flag is not set | 
+| `jmp`         | `rv`      | Unconditional jump to `rv` |
+| `jeq`         | `rv`      | Jump to `rv` if `cmp` found `rv1 == rv2` | 
+| `jne`         | `rv`      | Jump to `rv` if `cmp` found `rv1 != rv2` | 
+| `jgt`         | `rv`      | Jump to `rv` if `cmp` found `rv1 > rv2` |   
+| `jge`         | `rv`      | Jump to `rv` if `cmp` found `rv1 >= rv2` | 
+| `jlt`         | `rv`      | Jump to `rv` if `cmp` found `rv1 < rv2` | 
+| `jle`         | `rv`      | Jump to `rv` if `cmp` found `rv1 <= rv2` | 
+| `jer`         | `rv`      | Jump to `rv` if error flag is set | 
+| `jnr`         | `rv`      | Jump to `rv` if error flag is not set | 
 
 ### Artihmetic Instructions
 | Instruction | Operand 1 | Operand 2 | Operand 3 | Behavior |
@@ -202,8 +225,10 @@ Some instructions allow for a variable number of arguments (indicated by '...'')
 | `mul`         | `lv`        | `rv1`        | `rv2`        | `lv = rv1 * rv2` |
 | `div`         | `lv`        | `rv1`        | `rv2`        | `lv = rv1 / rv2` |
 | `mod`         | `lv`        | `rv1`        | `rv2`        | `lv = rv1 % rv2` |
-| `inc`         | `lv`        | --/`rv`        | --        | if no arguments: `lv++`; else `lv += rv` |
-| `dec`         | `lv`        | --/`rv`        | --        | if no arguments: `lv--`; else `lv -= rv` |
+| `inc`         | `lv`        | --           | --           | `lv++` |
+| `inc`         | `lv`        | `rv`         | --           | `lv += rv` |
+| `dec`         | `lv`        | --           | --           | `lv--` |
+| `dec`         | `lv`        | `rv`         | --           | `lv -= rv` |
 
 ### Bitwise Instructions
 | Instruction | Operand 1 | Operand 2 | Operand 3 | Behavior |
@@ -227,11 +252,11 @@ Functions can be overloaded, where the last function to appear in the code will 
 Syntax:
 ```
 ; All possible syntax for a function block
-fun @function_name arg1 arg2 arg2 ...:
+fun @function_name (arg1 arg2 arg2 ...):
     ...
     ... instructions here
     ...
-    ret val1 val2 val3 ...
+    ret (val1 val2 val3) ...
 
 ; Minimal required syntax for a function
 fun @foo:
@@ -242,14 +267,14 @@ Again, the whitespace is generally ignored, so indentation is encouraged, especi
 
 ```
 ; Use run and get arguments for the function (uses stack frames)
-fun @bar-1 a b:
+fun @bar-1 (a b):
     cpy c a
     cpy d b
     ret c d
 
 cpy a 1
 cpy b 2
-run @bar-1 a b
+run @bar-1 (a b)
 get a b
 
 ; Explicitly use the stack to send and retrieve variables
@@ -274,7 +299,7 @@ pop d
 When calling a function via the `run` instruction, usually you might supply the correct number of arguments, determined by the header of the called function. However, Slang does not care how many arguments are supplied to the function. If there are fewer arguments supplied to the called function, the provided arguments will be sent, and any remaining arguments not specified by the caller will be set to the default value of `0`. This is useful in the cases where you might want to have some default or optional arguments at the end of a function's parameter list. Additionally, more arguments can be supplied to the called function. In this case, the extra arguments will be placed onto the user stack in reverse order. To obtain these arguments, simply make calls to `pop` where the first argument exceeding the list will be popped first. This has use cases similar to variadic arguments in C. e.g. the Slang library function `sl-printf`.
 
 ```
-fun @foo a b:
+fun @foo (a b):
     prv a
     prv b
     ret
@@ -286,7 +311,7 @@ fun @bar a:
     pop c
     ret
 
-run @bar a b c
+run @bar (a b c)
 ```
 
 ## Control flow

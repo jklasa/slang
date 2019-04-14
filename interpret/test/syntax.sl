@@ -3,9 +3,9 @@
 <</ "import2.sl" ; end of line comment
 
 ; ===== FUNCTIONS =====
-fun @function_name arg1 arg2 arg2:
+fun @function_name (arg1 arg2 arg2):
     cpy hello
-    ret val1 val2 val3
+    ret (val1 val2 val3)
 
 fun @foo:
     ret
@@ -49,7 +49,7 @@ spr dst idx
 psh idx
 pop idx
 run @foo
-run @foo arg arg
+run @foo (arg arg)
 get arg2 arg
 ret arg arg
 ret
