@@ -2,7 +2,7 @@
 
 ## Table of Contents
 1. [Interpretation](#interpretation)
-2. [Whitespace](#whitespace)
+2. [Characters](#characters)
 3. [Comments](#comments)
 4. [Imports](#imports)
 5. [Variables](#variables)
@@ -18,8 +18,10 @@ Running a Slang program is a two step process: first, the input program is read 
 
 This detail is outside of the langauge itself, but the interpreter will use two types of errors: `InterpreterError` and `RuntimeError`. Interpreter errors will be errors encountered while reading and interpreting the supplied code. Usually the interpreter tries to find errors here before running the program so that time is not wasted waiting to reach errors that it should have known were going to happen anyway. Runtime errors are errors that the interpreter cannot find before execution. Instead, they are results from out of bounds accesses, invalid typing, invalid values, etc.
 
-## Whitespace
+## Characters
 Slang is interpreted line by line, and each line is interpreted character by character. Whitespace is generally ignored, except when differentiating keywords and variable names and when reading string literals. So, it is recommended to use indentation of whatever type in function blocks to format code for at least some readability.
+
+Functions, variables, labels, etc. are composed of only alphanumeric [A-Za-z0-9] characters, underscores _ and dashes -. Such named elements of the code must contain at least one alphabetic character. Certain other characters such as `[ ] " ;` are reserved an cannot be used when not indicating variable expressions, string literals, and comments.
 
 ## Comments
 Comments are delimited by semicolons anywhere in a line of code. Anything following the semicolon will be ignored by the interpreter.
