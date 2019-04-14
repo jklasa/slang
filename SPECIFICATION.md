@@ -120,10 +120,10 @@ cpy deref &pointer       ; deref now has the value stored at the memory
                          ; location pointed to by the pointer, e.g. 15
 ```
 
-### Compound Variables
-Compound variables also exist in Slang, and they were created out of convenience for the user. Without them, tedious pointer arithmetic would frequently be needed to complete most tasks invovling memory, which happen to be most tasks. Compound variables are delimited between square brackets `[]`, and the content inside the brackets is treated as if it were any other variable. Of course, this implies compound variables can be used with references and dereferenes, and this is exaclty the use for which they were intended.
+### Variable Expressions
+Variable expressions also exist in Slang, and they were created out of convenience for the user. Without them, tedious pointer arithmetic would frequently be needed to complete most tasks invovling memory, which happen to be most tasks. Variable expressions are essentially compound variables composed of other variables. They are delimited between square brackets `[]`, and the content inside the brackets is treated as if it were any other variable. Of course, this implies variable expressions can be used with references and dereferenes, and this is exaclty the use for which they were intended.
 
-Compound variables can fit a list of sums or differences of variable values. The format is `[var op var op var]`, where `var` is any variable (including another compound variable), and `op` is either addition `+` or subtraction `-`. Compound variables provide more power for relevant instructions by allowing additional arithmetic work to be performed within each instruction. It might be worth pointing out how certain addition or subtraction operations are more efficiently written and executed via compound variables instead of the addition or subtraction instructions themselves.
+Expressions can fit a list of sums or differences of variable values. The format is `[var op var op var]`, where `var` is any variable (including another expressions), and `op` is either addition `+` or subtraction `-`. Expressions provide more power for relevant instructions by allowing additional arithmetic work to be performed within each instruction. It might be worth pointing out how certain addition or subtraction operations are more efficiently written and executed via variable epressions instead of the addition or subtraction instructions themselves.
 
 Examples
 ```
@@ -132,7 +132,7 @@ cpy slow_var 1
 add slow_var slow_var 2
 add slow_var slow_var 3   ; much slower method for computing same answer of 6
 
-; the below loop prints 10 digits from a string and uses a compound variable
+; the below loop prints 10 digits from a string and uses a variable expression
 ; to replace pointer arithmetic that can be more cumbersome in select 
 ; situations
 cpy str "0123456789"
@@ -152,7 +152,7 @@ Like most elements of Slang, [labels](#control-flow) and [functions](#functions)
 ## Instructions
 Slang programs will consist of mostly instructions. Instructions, fitting one per line, are defined by a select set of keywords that are all 3 characters in length for uniformity. Most take a number of arguments that usually follow a general structure.
 
-Traditionally, if there is more than one argument for an instruction, the leftmost value will be treated as a left value. Left values require the ability to be set. Such values include local variables, global variables, dereferences of pointers (pointers that are local, global, or compound variables themselves), labels, and functions. Basically most types except for literals and variable references. In the below instruction tables, left values are marked by `lv`.
+Traditionally, if there is more than one argument for an instruction, the leftmost value will be treated as a left value. Left values require the ability to be set. Such values include local variables, global variables, dereferences of pointers (pointers that are local, global, or variable expressions themselves), labels, and functions. Basically most types except for literals and variable references. In the below instruction tables, left values are marked by `lv`.
 
 Right values can be any variable type and generally have no restrictions. These values only require that they can be read, which is true for all variables and literals. In the below instruction tables, right values are marked by `rv`.
 

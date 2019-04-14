@@ -101,23 +101,23 @@ func tokenizeLine(line string) ([]string, *interpreterError) {
 	quoted := false
 	escaped := false
 	label := false
-	compound := 0
+	expression := 0
 
 	for _, char := range line {
-		if compound > 0 {
+		if expression > 0 {
 			token.WriteRune(char)
 
 			if char == '[' {
-				compound++
+				expression++
 			} else if char == ']' {
-				compound--
+				expression--
 
-				if compound == 0 {
+				if expression == 0 {
 					tokens = append(tokens, token.String())
 					token.Reset()
 				}
 			} else if char == ';' {
-				return nil, &interpreterError{msg: "Comments are not permitted in compound variables"}
+				return nil, &interpreterError{msg: "Comments are not permitted in variable expressions"}
 			}
 			continue
 		}
@@ -125,7 +125,7 @@ func tokenizeLine(line string) ([]string, *interpreterError) {
 		switch char {
 		case '[':
 			if !quoted {
-				compound++
+				expression++
 			}
 			token.WriteRune(char)
 		case '\\':
@@ -171,6 +171,10 @@ func tokenizeLine(line string) ([]string, *interpreterError) {
 				token.WriteRune(char)
 			}
 		}
+	}
+
+	if expression > 0 {
+		return nil, &interpreterError{msg: "Un-closed variable expression"}
 	}
 
 	if token.Len() > 0 {
