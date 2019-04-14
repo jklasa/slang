@@ -1,6 +1,10 @@
 package main
 
-import "strings"
+import (
+	"bufio"
+	"io"
+	"strings"
+)
 
 type tokenType int
 
@@ -14,102 +18,184 @@ const (
 	compound
 )
 
-func tokenizeLine(line string) ([]string, *interpreterError) {
-	tokens := make([]string, 0)
-	var token strings.Builder
+func nextNTokens(count int, loc *location, reader *bufio.Reader) ([]string, *interpreterError) {
+	tokens := make([]string, count)
 
-	escaped := false
-	quoted := false
-	expression := 0
-
-charLoop:
-	for _, char := range line {
-		if expression > 0 {
-			token.WriteRune(char)
-
-			if char == '[' {
-				expression++
-			} else if char == ']' {
-				expression--
-
-				if expression == 0 {
-					tokens = append(tokens, token.String())
-					token.Reset()
-				}
-			} else if char == ';' {
-				return nil, &interpreterError{msg: "Comments are not permitted in variable expressions"}
-			}
-			continue
+	for i := 0; i < count; i++ {
+		token, err, eof := nextToken(loc, reader)
+		if err != nil {
+			err.loc = loc
+			return nil, err
 		}
 
-		switch char {
-		case ';':
-			if !quoted {
-				break charLoop
+		if eof == true {
+			return nil, &interpreterError{
+				msg: "Unexpectedly reached end of file",
+				loc: loc,
 			}
-			token.WriteRune(char)
-		case '[':
-			if !quoted {
-				expression++
-			}
-			token.WriteRune(char)
-		case '\\':
-			if escaped {
-				token.WriteRune(char)
-			}
-			escaped = !escaped
-		case '"':
-			token.WriteRune(char)
-			if !escaped {
-				if quoted {
-					tokens = append(tokens, token.String())
-					token.Reset()
-				}
-				quoted = !quoted
-			}
-		case ' ', '\t':
-			if !quoted {
-				if token.Len() > 0 {
-					tokens = append(tokens, token.String())
-				}
-				token.Reset()
-			} else {
-				token.WriteRune(char)
-			}
-		case 'n':
-			if escaped {
-				token.WriteRune('\n')
-				escaped = false
-			} else {
-				token.WriteRune(char)
-			}
-		case 't':
-			if escaped {
-				token.WriteRune('\t')
-				escaped = false
-			} else {
-				token.WriteRune(char)
-			}
-		default:
-			token.WriteRune(char)
 		}
-	}
 
-	if escaped {
-		token.WriteRune('\\')
-	}
-
-	if expression > 0 {
-		return nil, &interpreterError{msg: "Unclosed variable expression"}
-	} else if quoted {
-		return nil, &interpreterError{msg: "Unclosed string"}
-	}
-
-	if token.Len() > 0 {
-		tokens = append(tokens, token.String())
+		tokens[i] = token
 	}
 
 	return tokens, nil
 }
 
-func 
+func nextToken(loc *location, reader *bufio.Reader) (string, *interpreterError, bool) {
+	var token strings.Builder
+
+	comment := false
+	escaped := false
+	quoted := false
+	variadic := false
+	scope := 0
+	expression := 0
+
+	for {
+		if char, _, err := reader.ReadRune(); err != nil {
+			if err == io.EOF {
+				switch {
+				case quoted:
+					return "", &interpreterError{msg: "Unclosed string"}, true
+				case variadic:
+					return "", &interpreterError{msg: "Unclosed variadic"}, true
+				case scope > 0:
+					return "", &interpreterError{msg: "Unclosed structure scope"}, true
+				case expression > 0:
+					return "", &interpreterError{msg: "Unclosed variable expression"}, true
+				}
+
+				if token.Len() > 0 {
+					return token.String(), nil, true
+				}
+
+				return "", nil, true
+			} else {
+				return "", &interpreterError{
+					msg: "Error reading file",
+				}, false
+			}
+
+		} else {
+			if char == '\n' {
+				loc.line++
+			}
+
+			switch {
+			case comment:
+				if char == '\n' {
+					comment = false
+				}
+			case quoted:
+				switch char {
+				case '\\':
+					if escaped {
+						token.WriteRune(char)
+					}
+					escaped = !escaped
+				case 'n':
+					if escaped {
+						token.WriteRune('\n')
+						escaped = false
+					} else {
+						token.WriteRune(char)
+					}
+				case 't':
+					if escaped {
+						token.WriteRune('\t')
+						escaped = false
+					} else {
+						token.WriteRune(char)
+					}
+				case '"':
+					token.WriteRune(char)
+					if !escaped {
+						return token.String(), nil, false
+					}
+					escaped = false
+				default:
+					token.WriteRune(char)
+				}
+
+			case variadic:
+				token.WriteRune(char)
+				switch char {
+				case '(':
+					return "", &interpreterError{
+						msg: "Variadics are not permitted in other variadics",
+					}, false
+				case ')':
+					return token.String(), nil, false
+				case ';':
+					return "", &interpreterError{
+						msg: "Comments are not permitted in variadics",
+					}, false
+				case '{', '}':
+					return "", &interpreterError{
+						msg: "Scopes are not permitted in variadics",
+					}, false
+				}
+
+			case scope > 0:
+				token.WriteRune(char)
+				if char == '{' {
+					scope++
+				} else if char == '}' {
+					scope--
+
+					if scope == 0 {
+						return token.String(), nil, false
+					}
+				}
+
+			case expression > 0:
+				token.WriteRune(char)
+				switch char {
+				case '[':
+					expression++
+				case ']':
+					expression--
+					if expression == 0 {
+						return token.String(), nil, false
+					}
+				case ';':
+					return "", &interpreterError{
+						msg: "Comments are not permitted in variable expressions",
+					}, false
+				case '{', '}':
+					return "", &interpreterError{
+						msg: "Scopes are not permitted in variable expressions",
+					}, false
+				case '(', ')':
+					return "", &interpreterError{
+						msg: "Variadics are not permitted in variable expressions",
+					}, false
+				}
+
+			default:
+				switch char {
+				case ';':
+					comment = true
+				case '[':
+					token.WriteRune(char)
+					expression++
+				case '(':
+					token.WriteRune(char)
+					variadic = true
+				case '{':
+					token.WriteRune(char)
+					scope++
+				case '"':
+					token.WriteRune(char)
+					quoted = true
+				case ' ', '\t', '\r', '\n':
+					if token.Len() > 0 {
+						return token.String(), nil, false
+					}
+				default:
+					token.WriteRune(char)
+				}
+			}
+		}
+	}
+}

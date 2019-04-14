@@ -1,23 +1,24 @@
 package main
 
-func parse(pr *program, tokens []string) *interpreterError {
+import (
+	"bufio"
+	"fmt"
+	"io"
+)
 
-	for _, token := range tokens {
-		switch token {
+func parseFile(pr *program, loc *location, file io.Reader) *interpreterError {
+	loc.line = 1
+	reader := bufio.NewReader(file)
 
-		/* Imports */
-		case "<<<":
-
-		case "<</":
-
-			/* Functions, instructions */
-
-			/* Instructions */
-
-			/* Labels */
-
-			/* Variables */
-
+	for {
+		token, err, eof := nextToken(loc, reader)
+		if err != nil {
+			err.loc = loc
+			return err
+		} else if eof == true {
+			return nil
 		}
+
+		fmt.Printf("'%s'\n", token)
 	}
 }

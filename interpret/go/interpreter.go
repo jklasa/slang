@@ -1,10 +1,8 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
 	"os"
-	"strings"
 )
 
 func main() {
@@ -41,54 +39,20 @@ func interpretFile(pr *program, loc *location, filename string) *interpreterErro
 
 	pr.files[filename] = true
 
-	scanner := bufio.NewScanner(file)
-	for loc.line = 1; scanner.Scan(); loc.line++ {
-		importFile, guarded, err := interpretLine(pr, scanner.Text())
-		if err != nil {
-			err.loc = loc
-			return err
-		}
-
-		if importFile != nil {
-			if !guarded || (guarded && !pr.files[*importFile]) {
-				if *importFile == filename {
-					return &interpreterError{
-						msg: "Recursive import of file",
-						loc: loc,
-					}
-				}
-
-				if err = interpretFile(pr, loc, *importFile); err != nil {
-					return err
-				}
-			}
-		}
-	}
-
-	if err := scanner.Err(); err != nil {
-		return &interpreterError{
-			msg: "Error reading file",
-			loc: loc,
-		}
-	}
-
-	return nil
+	return parseFile(pr, loc, file)
 }
 
-func interpretLine(pr *program, line string) (*string, bool, *interpreterError) {
-	line = strings.TrimSpace(line)
-	if line == "" {
-		return nil, false, nil
-	}
+/*
+if !guarded || (guarded && !pr.files[*importFile]) {
+                if *importFile == filename {
+                    return &interpreterError{
+                        msg: "Recursive import of file",
+                        loc: loc,
+                    }
+                }
 
-	tokens, err := tokenizeLine(line)
-	if err != nil {
-		return nil, false, err
-	}
-
-	if err = parse(pr, tokens); err != nil {
-        return nil, false, 
-    }
-
-	return nil, false, nil
-}
+                if err = interpretFile(pr, loc, *importFile); err != nil {
+                    return err
+                }
+            }
+*/

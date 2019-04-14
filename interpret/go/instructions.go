@@ -53,6 +53,7 @@ const (
 
 	/* Bitwise */
 	bor
+	and
 	xor
 	inv
 	shl
