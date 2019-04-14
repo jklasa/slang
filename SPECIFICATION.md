@@ -149,7 +149,7 @@ jmp >loop
 ```
 
 ### Labels and Functions as Variables
-Like most elements of Slang, [labels](#control-flow) and [functions](#functions) are treated as variables as well. They can be read from as numeric (INT values), or written to as INT values. Attempts to write to these variable types with FLOAT values will sensibly result in error since these variables are as pointers to addresses. For more detail on these variable types (including range of scope), see their respective sections in the Slang spec.
+Like most elements of Slang, [labels](#control-flow) and [functions](#functions) are treated as variables as well. They have locations in memory just like variables and can be read from as numeric (INT) values, or written to as INT values. This also means you can use function values as pointers (or dereference them for whatever reason).
 
 ### Variadic variables
 You might see variadic variables used in instructions that take a variable number of arguments or in function headers. They are generally some sequence of variables that are enclosed in parenthesis and are sent to the instruction as a group of variables. For further reading, head on over to [instructions](#instructions).
@@ -172,9 +172,9 @@ Traditionally, if there is more than one argument for an instruction, the leftmo
 
 Right values can be any variable type and generally have no restrictions. These values only require that they can be read, which is true for all variables and literals. In the below instruction tables, right values are marked by `rv`.
 
-Most instructions require a specific number of arguments in a specific order, but some others allow for a variable number of arguments in groups (indicated by `(r/lv ...)`). Options here are to supply no arguments in this position, or supply arguments normally, but contained within single parenthesis. These instructions will use the arguments available, provided they are valid in type and quantity.
+Most instructions require a specific number of arguments in a specific order, but some others allow for a variable number of arguments in groups. Options here are to supply no arguments in this position, or supply arguments normally, but contained within single parenthesis. These instructions will use the arguments available, provided they are valid in type and quantity.
 
-The types of variables required within these groups depend on their use. In function headers and `get` instructions, these variables must all be left values. In `run` and `ret` instructions, the variables are all read and must all be right values.
+The types of variables required within these groups depend on their use. In function headers and `get` instructions, these variables must all be left values. Such variadic groups are labeled `(lvar)`. In `run` and `ret` instructions, the variables are all read and must all be right values. These variadic groups are labeled `(rvar)`.
 
 Example:
 ```
@@ -195,9 +195,9 @@ run @function (arg1 arg2 arg2)
 | `spr`         | `lv`        | `rv`        | --        | Write formatted string of the numeric value of `rv` into location set at `lv` | 
 | `psh`         | `rv`        | --        | --        | Push rv onto the stack | 
 | `pop`         | `lv`        | --        | --        | Pop value from top of stack in to `lv` | 
-| `run`         | `rv`        | (`r/lv` ...)        | --        | Run function `rv`. Takes variable number of `r/lv` arguments in parentheses, all determined by the function being run, that are sent to the function as arguments |
-| `get`         | `lv`        | (`r/lv` ...)        | --        | Variable args. Set all left values equal to values popped from the stack, in reverse order. Intended to retrieve values returned from a function |
-| `ret`         | (`r/lv` ...)        | --        | --        | Return from current function. Variable supplied arguments specify values to be returned via the stack in opposite order. | 
+| `run`         | `rv`        | `(rvar)`        | --        | Run function `rv`. Takes variable number of `r/lv` arguments in parentheses, all determined by the function being run, that are sent to the function as arguments |
+| `get`         | `lv`        | `lvar)`        | --        | Variable args. Set all left values equal to values popped from the stack, in reverse order. Intended to retrieve values returned from a function |
+| `ret`         | `(rvar)`        | --        | --        | Return from current function. Variable supplied arguments specify values to be returned via the stack in opposite order. | 
 | `all`         | `lv`        | `rv`        | --        | Allocate a block of memory of size rv and store pointer to it in lv | 
 | `del`         | `lv`        | --        | --        | Deallocate block of memory at location `lv` | 
 | `die`         | --        | --        | --        | Immediately end the program | 
