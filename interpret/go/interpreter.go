@@ -87,7 +87,7 @@ func interpretLine(pr *program, line string) (*string, bool, *interpreterError) 
 	}
 
 	for _, token := range tokens {
-		fmt.Printf("'%s'", token)
+		fmt.Printf("'%s' ", token)
 	}
 	fmt.Println()
 
@@ -98,11 +98,11 @@ func tokenizeLine(line string) ([]string, *interpreterError) {
 	tokens := make([]string, 0)
 	var token strings.Builder
 
-	quoted := false
 	escaped := false
-	label := false
+	quoted := false
 	expression := 0
 
+charLoop:
 	for _, char := range line {
 		if expression > 0 {
 			token.WriteRune(char)
@@ -123,6 +123,11 @@ func tokenizeLine(line string) ([]string, *interpreterError) {
 		}
 
 		switch char {
+		case ';':
+			if !quoted {
+				break charLoop
+			}
+			token.WriteRune(char)
 		case '[':
 			if !quoted {
 				expression++
@@ -144,37 +149,40 @@ func tokenizeLine(line string) ([]string, *interpreterError) {
 			}
 		case ' ', '\t':
 			if !quoted {
-				if token.Len() != 0 {
-					if label {
-						// Labels
-					} else {
-						tokens = append(tokens, token.String())
-					}
+				if token.Len() > 0 {
+					tokens = append(tokens, token.String())
 				}
 				token.Reset()
 			} else {
 				token.WriteRune(char)
 			}
-		case ';':
-			continue
-		default:
+		case 'n':
 			if escaped {
-				if char == 'n' {
-					token.WriteRune('\n')
-				} else if char == 't' {
-					token.WriteRune('\t')
-				} else {
-					token.WriteRune(char)
-				}
+				token.WriteRune('\n')
 				escaped = false
 			} else {
 				token.WriteRune(char)
 			}
+		case 't':
+			if escaped {
+				token.WriteRune('\t')
+				escaped = false
+			} else {
+				token.WriteRune(char)
+			}
+		default:
+			token.WriteRune(char)
 		}
 	}
 
+	if escaped {
+		token.WriteRune('\\')
+	}
+
 	if expression > 0 {
-		return nil, &interpreterError{msg: "Un-closed variable expression"}
+		return nil, &interpreterError{msg: "Unclosed variable expression"}
+	} else if quoted {
+		return nil, &interpreterError{msg: "Unclosed string"}
 	}
 
 	if token.Len() > 0 {
