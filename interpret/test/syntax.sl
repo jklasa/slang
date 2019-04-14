@@ -2,19 +2,42 @@
 <<< "import.sl"
 <</ "import2.sl" ; end of line comment
 
-; ===== FUNCTIONS =====
-fun @function_name (arg1 arg2 arg2):
+; ===== STRUCTURES =====
+def struct (lat long)
+
+def class (mem1 mem2) {
+
+}
+
+def class (mem2 mem2 mem3) {
+    cpy idx 0
+
+    def Function {
+        ret
+    }
+}
+
+def FunctionName (arg1 arg2 arg2) {
     cpy hello
+
+    def localFunction (arg4):
+        ret
+
+    run localFunction
+
     ret (val1 val2 val3)
+}
 
-fun @foo:
+def Foo () {
     ret
+}
 
-fun @sl-printf:
+def Printf () {
     ret
+}
 
-run @foo
-run @sl-printf
+run Foo ()
+run Printf
 
 ; ===== LABELS =====
 #next:
@@ -26,8 +49,8 @@ cpy one false
 cpy two true
 cpy three nil
 
-cpy local 0
-cpy $GLOBAL 15
+cpy local >label
+cpy Global 15
 
 cpy str "this is a %s %v string \" still a string\n\\n"
 cpy float -0.15214
@@ -37,6 +60,10 @@ cpy ptr1 &str
 cpy ptr2 &[str + 1]
 cpy drf1 *str
 cpy drf2 *[str + &[1 + 1]]
+
+def coords (lat long)
+new location coords (124 153)
+cpy temp location.lat
 
 ; ===== INSTRUCTIONS =====
 nop
@@ -86,3 +113,6 @@ inv a b c
 shl a b c
 shr a b c
 usr a b c
+
+def
+new
